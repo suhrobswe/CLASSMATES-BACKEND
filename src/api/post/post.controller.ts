@@ -34,7 +34,7 @@ import { RolesGuard } from 'src/common/guard/roles.guard';
 export class PostController {
   constructor(private readonly postService: PostService) {}
 
-  @UseGuards(AuthGuard, RolesGuard)
+  // @UseGuards(AuthGuard, RolesGuard)
   @accessRoles(Roles.ADMIN)
   @Post()
   @UseInterceptors(FilesInterceptor('files', 10, multerOptions))

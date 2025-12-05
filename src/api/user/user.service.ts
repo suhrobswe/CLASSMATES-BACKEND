@@ -31,7 +31,6 @@ export class UserService
     super(userRepo);
   }
 
-  
   async onModuleInit() {
     try {
       const existsAdmin = await this.userRepo.findOne({
@@ -47,9 +46,11 @@ export class UserService
           password: hashedPassword,
           role: Roles.ADMIN,
         });
+        console.log('Admin created');
 
         await this.userRepo.save(admin);
       }
+      console.log('Admin already exists');
     } catch (error) {
       // throw new InternalServerErrorException('Error on creating SUPER ADMIN');
     }
@@ -101,7 +102,7 @@ export class UserService
   }
 
   async signIn(dto: SignInDto, res: Response) {
-    const { username, password } = dto;
+    const { username, password, role } = dto;
 
     const user = await this.userRepo.findOne({ where: { username } });
     const isMatchPassword = await this.crypto.decrypt(
@@ -111,6 +112,10 @@ export class UserService
 
     if (!user || !isMatchPassword)
       throw new BadRequestException('Username or password incorrect');
+
+    if (user.role !== role) {
+      throw new BadRequestException('User role mismatch');
+    }
 
     const payload: IToken = {
       id: user.id,
@@ -122,6 +127,9 @@ export class UserService
     const refreshToken = await this.token.refreshToken(payload);
     await this.token.writeCookie(res, 'token', refreshToken, 15);
 
-    return successRes(accessToken);
+    return successRes({
+      accessToken,
+      role,
+    });
   }
 }

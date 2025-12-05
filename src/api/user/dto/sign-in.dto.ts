@@ -15,6 +15,5 @@ export class SignInDto {
 
   @ApiProperty({ example: Roles.ADMIN })
   @IsNotEmpty()
-  @IsEnum(Roles)
-  role: Roles;
+  role: string;
 }

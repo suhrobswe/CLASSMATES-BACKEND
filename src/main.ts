@@ -6,7 +6,13 @@ import { join } from 'path';
 import * as express from 'express';
 
 async function start() {
-  const app = await NestFactory.create(AppModule, { cors: true });
+  const app = await NestFactory.create(AppModule);
+
+  app.enableCors({
+    origin: 'http://localhost:5173',
+    methods: 'GET,HEAD,PUT,PATCH,POST,DELETE,OPTIONS',
+    credentials: true,
+  });
 
   // Global API prefix
   app.setGlobalPrefix('api/v1');
