@@ -10,6 +10,9 @@ import {
   Res,
   Req,
   BadRequestException,
+  HttpException,
+  UploadedFile,
+  UseInterceptors,
 } from '@nestjs/common';
 import { UserService } from './user.service';
 import { CreateUserDto } from './dto/create-user.dto';
@@ -21,6 +24,7 @@ import {
   ApiResponse,
   ApiBody,
   ApiParam,
+  ApiConsumes,
 } from '@nestjs/swagger';
 import { UserEntity } from 'src/core/user.entity';
 import { accessRoles } from 'src/common/decorator/role.decorator';
@@ -29,6 +33,11 @@ import { AuthGuard } from 'src/common/guard/auth.guard';
 import { RolesGuard } from 'src/common/guard/roles.guard';
 import { SignInDto } from './dto/sign-in.dto';
 import type { Response } from 'express';
+import { StatusDto } from './dto/status.dto';
+import { JwtAuthGuard } from 'src/common/guard/jwt.guard';
+import { CurrentUser } from 'src/common/decorator/currentUser.decorator';
+import type { IToken } from 'src/common/token';
+import { FileInterceptor } from '@nestjs/platform-express';
 
 @ApiTags('Users')
 @ApiBearerAuth()
@@ -36,7 +45,7 @@ import type { Response } from 'express';
 export class UserController {
   constructor(private readonly userService: UserService) {}
 
-  @UseGuards(AuthGuard, RolesGuard)
+  // @UseGuards(AuthGuard, RolesGuard)
   @accessRoles(Roles.ADMIN)
   @Post()
   @ApiOperation({ summary: 'Create a new admin user' })
@@ -58,7 +67,7 @@ export class UserController {
     return this.userService.signIn(signInDto, res);
   }
 
-  @UseGuards(AuthGuard, RolesGuard)
+  // @UseGuards(AuthGuard, RolesGuard)
   @accessRoles(Roles.ADMIN)
   @Get()
   @ApiOperation({ summary: 'Get all users' })
@@ -69,6 +78,25 @@ export class UserController {
   })
   findAll() {
     return this.userService.findAll({ order: { username: 'DESC' } });
+  }
+
+  // getProfile(@CurrentUser() user: IToken) {
+  //   return this.userService.findOneById(user.id, {
+  //     select: {
+  //       id: true,
+  //       username: true,
+  //       fullName: true,
+  //       role: true,
+  //       createdAt: true,
+  //       updatedAt: true,
+  //     },
+  //   });
+  // }
+
+  // GET /users/username/:username
+  @Get(':username')
+  async findByUsername(@Param('username') username: string) {
+    return this.userService.findByUsername(username);
   }
 
   @UseGuards(AuthGuard, RolesGuard)
@@ -82,17 +110,7 @@ export class UserController {
     return this.userService.findOneById(+id);
   }
 
-  // @UseGuards(AuthGuard)
-  // @Get('me')
-  // getMe(@Req() req: any) {
-  //   const userId = Number(req.user?.id);
-  //   if (isNaN(userId)) {
-  //     throw new BadRequestException('Invalid user ID in token');
-  //   }
-  //   return this.userService.findOneById(userId);
-  // }
-
-  @UseGuards(AuthGuard, RolesGuard)
+  // @UseGuards(AuthGuard, RolesGuard)
   @accessRoles(Roles.ADMIN)
   @Patch(':id')
   @ApiOperation({ summary: 'Update a user by ID' })
@@ -107,7 +125,34 @@ export class UserController {
     return this.userService.updateUser(+id, updateUserDto);
   }
 
-  @UseGuards(AuthGuard, RolesGuard)
+  @Patch('status/:id')
+  @ApiBearerAuth()
+  @accessRoles(Roles.ADMIN)
+  updateStatus(@Param('id') id: string, @Body() dto: StatusDto) {
+    return this.userService.updateStatusIsActive(+id, dto);
+  }
+  @Patch('image/:id')
+  @UseInterceptors(
+    FileInterceptor('file', {
+      dest: './uploads', // faylni qayerga saqlash
+      fileFilter: (req, file, cb) => {
+        if (!file.mimetype.startsWith('image/')) {
+          cb(new HttpException('Only images are allowed', 400), false);
+        } else {
+          cb(null, true);
+        }
+      },
+    }),
+  )
+  async updateAvatarUser(
+    @Param('id') id: string,
+    @UploadedFile() file: Express.Multer.File,
+  ) {
+    if (!file) throw new HttpException('File is required', 400);
+
+    return this.userService.updateAvatar(+id, file);
+  }
+  // @UseGuards(AuthGuard, RolesGuard)
   @accessRoles(Roles.ADMIN)
   @Delete(':id')
   @ApiOperation({ summary: 'Delete a user by ID' })

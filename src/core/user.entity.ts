@@ -4,10 +4,10 @@ import { BaseEntity } from './base.entity';
 
 @Entity('user')
 export class UserEntity extends BaseEntity {
-  @Column({ type: 'varchar', unique: true, nullable: false })
+  @Column({ type: 'varchar', nullable: false })
   username: string;
 
-  @Column({ type: 'varchar', unique: true, nullable: false })
+  @Column({ type: 'varchar', nullable: false })
   fullName: string;
 
   @Column({ type: 'varchar', nullable: false })

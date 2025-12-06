@@ -18,7 +18,7 @@ async function start() {
   app.setGlobalPrefix('api/v1');
 
   // Static folder serve (uploads)
-  app.use('/uploads', express.static(join(process.cwd(), 'uploads')));
+  app.use('/api/v1/uploads', express.static(join(process.cwd(), 'uploads')));
 
   // Swagger configuration
   const swaggerConfig = new DocumentBuilder()

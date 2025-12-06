@@ -1,7 +1,9 @@
 import {
   BadRequestException,
   ConflictException,
+  HttpException,
   Injectable,
+  NotFoundException,
   OnModuleInit,
 } from '@nestjs/common';
 import { CreateUserDto } from './dto/create-user.dto';
@@ -17,6 +19,10 @@ import { successRes } from 'src/infrastructure/successRe';
 import { SignInDto } from './dto/sign-in.dto';
 import { IToken, TokenService } from 'src/common/token';
 import { Response } from 'express';
+import { StatusDto } from './dto/status.dto';
+import { existsSync, unlinkSync } from 'fs';
+import { join } from 'path';
+import { ISuccess } from 'src/infrastructure/pagination/successResponse';
 
 @Injectable()
 export class UserService
@@ -74,6 +80,24 @@ export class UserService
 
     return successRes(user, 201);
   }
+
+  async findByUsername(username: string) {
+    const user = await this.userRepo.findOne({
+      where: { username },
+      select: {
+        id: true,
+        username: true,
+        fullName: true,
+        role: true,
+        imageUrl: true,
+        isActive: true,
+      },
+    });
+
+    if (!user) throw new NotFoundException('User not found');
+    return user;
+  }
+
   async updateUser(id: number, updateDto: UpdateUserDto) {
     if (updateDto.username) {
       const existsUsername = await this.userRepo.findOne({
@@ -105,13 +129,20 @@ export class UserService
     const { username, password, role } = dto;
 
     const user = await this.userRepo.findOne({ where: { username } });
-    const isMatchPassword = await this.crypto.decrypt(
-      password,
-      user?.password!,
-    );
 
-    if (!user || !isMatchPassword)
+    if (!user) {
       throw new BadRequestException('Username or password incorrect');
+    }
+
+    if (!password || !user.password) {
+      throw new BadRequestException('Password is required');
+    }
+
+    const isMatchPassword = await this.crypto.decrypt(password, user.password);
+
+    if (!isMatchPassword) {
+      throw new BadRequestException('Username or password incorrect');
+    }
 
     if (user.role !== role) {
       throw new BadRequestException('User role mismatch');
@@ -125,11 +156,67 @@ export class UserService
 
     const accessToken = await this.token.accessToken(payload);
     const refreshToken = await this.token.refreshToken(payload);
-    await this.token.writeCookie(res, 'token', refreshToken, 15);
-
+    await this.token.writeCookie(res, 'refresh_token', refreshToken, 15); // Nomni o'zgartiring
     return successRes({
       accessToken,
       role,
     });
+  }
+
+  async getUserById(id: number) {
+    const user = await this.userRepo.findOne({
+      where: { id: id },
+      select: {
+        id: true,
+        username: true,
+        fullName: true,
+        role: true,
+        imageUrl: true,
+        isActive: true,
+      },
+    });
+
+    if (!user) throw new NotFoundException('User not found');
+
+    return user;
+  }
+
+  async updateStatusIsActive(id: number, dto: StatusDto) {
+    const teacher = await this.userRepo.findOne({ where: { id } });
+
+    if (!teacher) {
+      throw new NotFoundException('User not found');
+    }
+
+    teacher.isActive = dto.isActive;
+
+    await this.userRepo.save(teacher);
+
+    return {
+      message: `Teacher status updated to ${dto.isActive ? 'Active' : 'Blocked'}`,
+      teacher,
+    };
+  }
+
+  async updateAvatar(id: number, file: Express.Multer.File): Promise<ISuccess> {
+    const user = await this.userRepo.findOne({ where: { id } });
+    if (!user) throw new HttpException('User not found', 404);
+
+    const relativeUrl = `/uploads/${file.filename}`;
+    const avatarUrl = `http://localhost:3000/api/v1${relativeUrl}`;
+
+    if (user.imageUrl) {
+      const oldFilePath = join(process.cwd(), user.imageUrl);
+      if (existsSync(oldFilePath)) {
+        unlinkSync(oldFilePath);
+      }
+    }
+
+    user.image = avatarUrl;
+    user.imageUrl = relativeUrl;
+
+    const updatedUser = await this.userRepo.save(user);
+
+    return successRes(updatedUser);
   }
 }
