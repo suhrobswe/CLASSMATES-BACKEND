@@ -4,37 +4,41 @@ import { config } from './config';
 import { DocumentBuilder, SwaggerModule } from '@nestjs/swagger';
 import { join } from 'path';
 import * as express from 'express';
+import { Request, Response } from 'express';
 
 async function start() {
   const app = await NestFactory.create(AppModule);
 
-  // ⚠️ Agar frontend shu backend orqali servis qilinsa,
-  // CORS umuman kerak bo‘lmaydi
   app.enableCors({
     origin: true,
     credentials: true,
   });
 
-  // Global API prefix
+  // API prefix
   app.setGlobalPrefix('api/v1');
 
-  // Static folder serve (uploads)
+  // uploads
   app.use('/api/v1/uploads', express.static(join(process.cwd(), 'uploads')));
 
-  // 🔹 FRONTEND STATIC SERVE (Vite dist)
-  app.use(express.static(join(process.cwd(), 'CLASSMATES-FRONTEND', 'dist')));
+  // 🔹 FRONTEND static (TO‘G‘RI PATH)
+  app.use(
+    express.static(join(process.cwd(), '..', 'CLASSMATES-FRONTEND', 'dist')),
+  );
 
-  // 🔹 React/Vite routing uchun
-  app.get('*', (req, res) => {
+  // 🔹 EXPRESS instance
+  const server = app.getHttpAdapter().getInstance();
+
+  // 🔹 React router fallback (Express v5 SAFE)
+  server.get(/^(?!\/api).*/, (req: Request, res: Response) => {
     res.sendFile(
-      join(process.cwd(), 'CLASSMATES-FRONTEND', 'dist', 'index.html'),
+      join(process.cwd(), '..', 'CLASSMATES-FRONTEND', 'dist', 'index.html'),
     );
   });
 
-  // Swagger configuration
+  // Swagger
   const swaggerConfig = new DocumentBuilder()
     .setTitle('API Documentation')
-    .setDescription('NestJS API documentation with Swagger')
+    .setDescription('NestJS API documentation')
     .setVersion('1.0')
     .addBearerAuth()
     .build();
@@ -44,7 +48,6 @@ async function start() {
 
   await app.listen(config.PORT);
   console.log(`Server running on port: ${config.PORT}`);
-  console.log(`Swagger Docs: http://localhost:${config.PORT}/api/docs`);
 }
 
 start();
