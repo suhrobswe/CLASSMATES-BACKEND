@@ -8,9 +8,10 @@ import * as express from 'express';
 async function start() {
   const app = await NestFactory.create(AppModule);
 
+  // ⚠️ Agar frontend shu backend orqali servis qilinsa,
+  // CORS umuman kerak bo‘lmaydi
   app.enableCors({
-    origin: 'http://localhost:5173',
-    methods: 'GET,HEAD,PUT,PATCH,POST,DELETE,OPTIONS',
+    origin: true,
     credentials: true,
   });
 
@@ -19,6 +20,16 @@ async function start() {
 
   // Static folder serve (uploads)
   app.use('/api/v1/uploads', express.static(join(process.cwd(), 'uploads')));
+
+  // 🔹 FRONTEND STATIC SERVE (Vite dist)
+  app.use(express.static(join(process.cwd(), 'CLASSMATES-FRONTEND', 'dist')));
+
+  // 🔹 React/Vite routing uchun
+  app.get('*', (req, res) => {
+    res.sendFile(
+      join(process.cwd(), 'CLASSMATES-FRONTEND', 'dist', 'index.html'),
+    );
+  });
 
   // Swagger configuration
   const swaggerConfig = new DocumentBuilder()
