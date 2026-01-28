@@ -16,10 +16,9 @@ import { AuthModule } from './api/auth.module';
       isGlobal: true,
     }),
 
-    // Static file serve
     ServeStaticModule.forRoot({
       rootPath: join(process.cwd(), 'uploads'),
-      serveRoot: config.FILE_PATH, // frontend orqali kirish yo‘li
+      serveRoot: config.FILE_PATH,
     }),
     TypeOrmModule.forRoot({
       type: 'postgres',

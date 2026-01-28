@@ -26,7 +26,6 @@ import { RolesGuard } from 'src/common/guard/roles.guard';
 export class VideoController {
   constructor(private readonly videoService: VideoService) {}
 
-  // @UseGuards(AuthGuard, RolesGuard)
   @accessRoles(Roles.ADMIN)
   @Post('upload')
   @UseInterceptors(

@@ -58,8 +58,21 @@ export class UserService
       }
       console.log('Admin already exists');
     } catch (error) {
-      // throw new InternalServerErrorException('Error on creating SUPER ADMIN');
     }
+  }
+
+
+ async updatePassword(id: number, newPass: string) {
+    const user = await this.userRepo.findOne({ where: { id } });
+    if (!user) {
+      throw new NotFoundException('Foydalanuvchi topilmadi');
+    }
+
+    const hashedPassword = await this.crypto.encrypt(newPass);
+
+    await this.userRepo.update(id, { password: hashedPassword });
+
+    return successRes({ message: 'Parol muvaffaqiyatli o‘zgartirildi' });
   }
 
   async createUser(createUserDto: CreateUserDto) {
@@ -156,7 +169,7 @@ export class UserService
 
     const accessToken = await this.token.accessToken(payload);
     const refreshToken = await this.token.refreshToken(payload);
-    await this.token.writeCookie(res, 'refresh_token', refreshToken, 15); // Nomni o'zgartiring
+    await this.token.writeCookie(res, 'refresh_token', refreshToken, 15); 
     return successRes({
       accessToken,
       role,

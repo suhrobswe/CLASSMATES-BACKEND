@@ -14,7 +14,6 @@ import { PostService } from './post.service';
 import { CreatePostDto } from './dto/create-post.dto';
 import { UpdatePostDto } from './dto/update-post.dto';
 import { FilesInterceptor } from '@nestjs/platform-express';
-import { multerOptions } from 'src/infrastructure/file/file.service';
 import {
   ApiTags,
   ApiOperation,
@@ -28,36 +27,22 @@ import { accessRoles } from 'src/common/decorator/role.decorator';
 import { Roles } from 'src/common/enum/roles.enum';
 import { AuthGuard } from 'src/common/guard/auth.guard';
 import { RolesGuard } from 'src/common/guard/roles.guard';
+import { multerMemoryOptions } from 'src/infrastructure/file/multer.config';
 
 @ApiTags('Posts')
 @Controller('post')
 export class PostController {
   constructor(private readonly postService: PostService) {}
 
-  // @UseGuards(AuthGuard, RolesGuard)
+  @UseGuards(AuthGuard, RolesGuard)
   @accessRoles(Roles.ADMIN)
   @Post()
-  @UseInterceptors(FilesInterceptor('files', 10, multerOptions))
-  @ApiOperation({ summary: 'Create a new post' })
-  @ApiConsumes('multipart/form-data')
-  @ApiBody({
-    schema: {
-      type: 'object',
-      properties: {
-        title: { type: 'string', example: 'My First Post' },
-        files: {
-          type: 'array',
-          items: { type: 'string', format: 'binary' },
-        },
-      },
-    },
-  })
-  @ApiResponse({ status: 201, type: PostEntity })
+  @UseInterceptors(FilesInterceptor('files', 10, multerMemoryOptions))
   create(
-    @Body() createPostDto: CreatePostDto,
+    @Body() dto: CreatePostDto,
     @UploadedFiles() files: Express.Multer.File[],
   ) {
-    return this.postService.createPost(createPostDto, files);
+    return this.postService.createPost(dto, files);
   }
 
   @Get()
@@ -75,38 +60,17 @@ export class PostController {
     return this.postService.findPostById(+id);
   }
 
-  @UseGuards(AuthGuard, RolesGuard)
-  @accessRoles(Roles.ADMIN)
   @Patch(':id')
-  @UseInterceptors(FilesInterceptor('files', 10, multerOptions))
-  @ApiOperation({ summary: 'Update a post' })
-  @ApiParam({ name: 'id', type: Number })
-  @ApiConsumes('multipart/form-data')
-  @ApiBody({
-    schema: {
-      type: 'object',
-      properties: {
-        title: { type: 'string', example: 'Updated Title' },
-        files: {
-          type: 'array',
-          items: { type: 'string', format: 'binary' },
-        },
-      },
-    },
-  })
-  @ApiResponse({ status: 200, type: PostEntity })
+  @UseInterceptors(FilesInterceptor('files', 10, multerMemoryOptions))
   update(
     @Param('id') id: string,
-    @Body() updatePostDto: UpdatePostDto,
+    @Body() dto: UpdatePostDto,
     @UploadedFiles() files: Express.Multer.File[],
   ) {
-    return this.postService.updatePost(+id, updatePostDto, files);
+    return this.postService.updatePost(+id, dto, files);
   }
 
   @Delete(':id')
-  @ApiOperation({ summary: 'Delete a post' })
-  @ApiParam({ name: 'id', type: Number })
-  @ApiResponse({ status: 200, description: 'Post deleted successfully' })
   remove(@Param('id') id: string) {
     return this.postService.deletePost(+id);
   }

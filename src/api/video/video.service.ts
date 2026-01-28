@@ -33,7 +33,7 @@ export class VideoService {
         },
       }),
       limits: {
-        fileSize: 50 * 1024 * 1024, // ~50MB, 40-60s video uchun
+        fileSize: 50 * 1024 * 1024,
       },
       fileFilter: (req, file, cb) => {
         if (!file.mimetype.startsWith('video/')) {
@@ -49,12 +49,12 @@ export class VideoService {
 
   async getAllVideos() {
     try {
-      const files = readdirSync(this.videosPath); // papkadan fayllarni o‘qiydi
+      const files = readdirSync(this.videosPath); 
       return files
-        .filter((file) => file.endsWith('.mp4') || file.endsWith('.mov')) // faqat video fayllar
+        .filter((file) => file.endsWith('.mp4') || file.endsWith('.mov'))
         .map((file) => ({
           filename: file,
-          url: `${SERVER_URL}/uploads/videos/${file}`, // public URL
+          url: `${SERVER_URL}/uploads/videos/${file}`, 
         }));
     } catch (err) {
       return [];

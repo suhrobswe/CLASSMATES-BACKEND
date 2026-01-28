@@ -1,52 +1,39 @@
 import {
+  Injectable,
   CanActivate,
   ExecutionContext,
-  ForbiddenException,
-  HttpException,
-  Injectable,
-  InternalServerErrorException,
   UnauthorizedException,
+  HttpException,
 } from '@nestjs/common';
-import { Reflector } from '@nestjs/core';
 import { JwtService } from '@nestjs/jwt';
 import { config } from 'src/config';
-import { ROLES_KEY } from '../decorator/role.decorator';
 
 @Injectable()
 export class AuthGuard implements CanActivate {
-  constructor(
-    private readonly jwt: JwtService,
-    private reflector: Reflector,
-  ) {}
+  constructor(private readonly jwt: JwtService) {}
 
-  canActivate(ctx: ExecutionContext): boolean {
-    //  Agar route @Roles('public') bo'lsa — token talab qilinmaydi
-    const roles = this.reflector.getAllAndOverride<string[]>(ROLES_KEY, [
-      ctx.getHandler(),
-      ctx.getClass(),
-    ]);
-    if (roles?.includes('public')) return true;
-    const req = ctx.switchToHttp().getRequest();
-    const auth = req.headers.authorization as string | undefined;
+  canActivate(context: ExecutionContext): boolean {
+    const req = context.switchToHttp().getRequest();
+    const authHeader = req.headers['authorization'];
 
-    if (!auth?.startsWith('Bearer ')) throw new UnauthorizedException();
 
-    const token = auth.slice(7);
+    if (!authHeader)
+      throw new UnauthorizedException('Authorization header missing');
+
+    const [bearer, token] = authHeader.split(' ');
+
+    if (bearer !== 'Bearer' || !token) {
+      throw new UnauthorizedException('Invalid authorization format');
+    }
+
     try {
-      const data = this.jwt.verify(token, {
+      const payload = this.jwt.verify(token, {
         secret: config.TOKEN.ACCESS_TOKEN_KEY,
       });
-      req.user = data;
+      req.user = payload;
       return true;
-    } catch (error: any) {
-      if (error.name === 'TokenExpiredError') {
-        throw new UnauthorizedException('Token expired');
-      } else if (error.name === 'JsonWebTokenError') {
-        throw new UnauthorizedException('Invalid token');
-      } else if (error instanceof UnauthorizedException) {
-        throw error;
-      }
-      throw new InternalServerErrorException('Unexpected error occurred');
+    } catch (error) {
+      throw new HttpException('Invalid or expired token', 401);
     }
   }
 }

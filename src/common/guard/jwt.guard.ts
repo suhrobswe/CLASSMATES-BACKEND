@@ -9,7 +9,7 @@ export class JwtAuthGuard extends AuthGuard('jwt') implements CanActivate {
 
   async validate(payload: any) {
     return {
-      id: Number(payload.id), // number qilib beramiz
+      id: Number(payload.id),
       username: payload.username,
       role: payload.role,
     };

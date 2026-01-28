@@ -1,54 +1,56 @@
-import { HttpException, HttpStatus } from '@nestjs/common';
-import { diskStorage } from 'multer';
-import { extname, join } from 'path';
+import {
+  Injectable,
+  InternalServerErrorException,
+  BadRequestException,
+} from '@nestjs/common';
 import { existsSync, mkdirSync } from 'fs';
-import { config } from 'src/config';
+import { writeFile, unlink } from 'fs/promises';
+import { join, extname } from 'path';
+import { v4 as uuidv4 } from 'uuid'; 
 
-// Fayl yuklanadigan asosiy papka
-export const UPLOAD_DESTINATION = join(
-  process.cwd(),
-  config.FILE_PATH || '/uploads',
-);
-// Papka borligini tekshirish va yaratish
-export const createDestination = () => {
-  if (!existsSync(UPLOAD_DESTINATION)) {
-    mkdirSync(UPLOAD_DESTINATION, { recursive: true });
+@Injectable()
+export class FileService {
+  private uploadDir = join(process.cwd(), 'uploads');
+
+  constructor() {
+    if (!existsSync(this.uploadDir)) {
+      mkdirSync(this.uploadDir, { recursive: true });
+    }
   }
-};
 
-// Multer uchun umumiy nastroyka
-export const multerOptions = {
-  // Faylni qayerga va qanday nom bilan saqlash
-  storage: diskStorage({
-    destination: (req, file, cb) => {
-      createDestination(); // Papka bo'lmasa yaratadi
-      cb(null, UPLOAD_DESTINATION);
-    },
-    filename: (req, file, cb) => {
-      // Fayl nomi: unique-id.jpg
-      const randomName = Array(32)
-        .fill(null)
-        .map(() => Math.round(Math.random() * 16).toString(16))
-        .join('');
-      cb(null, `${randomName}${extname(file.originalname)}`);
-    },
-  }),
-  // Faqat rasm yuklashini tekshirish
-  fileFilter: (req: any, file: any, cb: any) => {
-    if (file.mimetype.match(/\/(jpg|jpeg|png)$/)) {
-      cb(null, true);
-    } else {
-      cb(
-        new HttpException(
-          `Unsupported file type ${extname(file.originalname)}`,
-          HttpStatus.BAD_REQUEST,
-        ),
-        false,
+  async saveFile(file: Express.Multer.File): Promise<string> {
+    try {
+      this.validateFile(file);
+
+      const fileName = `${uuidv4()}${extname(file.originalname)}`;
+      const fullPath = join(this.uploadDir, fileName);
+
+      await writeFile(fullPath, file.buffer);
+
+      return fileName;
+    } catch (error) {
+      throw new InternalServerErrorException(
+        `Fayl yozishda xatolik: ${error.message}`,
       );
     }
-  },
-  // Hajmni cheklash (masalan 5MB)
-  limits: {
-    fileSize: 5 * 1024 * 1024,
-  },
-};
+  }
+
+  async deleteFile(fileName: string): Promise<void> {
+    try {
+      if (!fileName) return;
+
+      const fullPath = join(this.uploadDir, fileName);
+
+      if (existsSync(fullPath)) {
+        await unlink(fullPath);
+      }
+    } catch (error) {
+      console.error(`Fayl o'chirishda xatolik: ${error.message}`);
+    }
+  }
+
+  private validateFile(file: Express.Multer.File) {
+    if (!file.mimetype.match(/\/(jpg|jpeg|png|gif|pdf|mp4|mov)$/)) {
+    }
+  }
+}
