@@ -9,11 +9,13 @@ import {
   UseInterceptors,
   UploadedFiles,
   UseGuards,
+  Put,
+  UploadedFile,
 } from '@nestjs/common';
 import { PostService } from './post.service';
 import { CreatePostDto } from './dto/create-post.dto';
 import { UpdatePostDto } from './dto/update-post.dto';
-import { FilesInterceptor } from '@nestjs/platform-express';
+import { FileInterceptor, FilesInterceptor } from '@nestjs/platform-express';
 import {
   ApiTags,
   ApiOperation,
@@ -73,5 +75,20 @@ export class PostController {
   @Delete(':id')
   remove(@Param('id') id: string) {
     return this.postService.deletePost(+id);
+  }
+
+  @Delete(':id/file')
+  async deleteFile(@Param('id') id: string, @Body('fileUrl') fileUrl: string) {
+    return this.postService.deletePostFile(+id, fileUrl);
+  }
+
+  @Put(':id/file')
+  @UseInterceptors(FileInterceptor('file'))
+  async replaceFile(
+    @Param('id') id: string,
+    @Body('oldFileUrl') oldFileUrl: string,
+    @UploadedFile() file: Express.Multer.File,
+  ) {
+    return this.postService.replacePostFile(+id, oldFileUrl, file);
   }
 }
