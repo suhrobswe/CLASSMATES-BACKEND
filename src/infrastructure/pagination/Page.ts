@@ -1,4 +1,4 @@
-import { IResponsePagination } from "./successResponse";
+import { IResponsePagination } from './successResponse';
 
 export class Pager<T> {
   public static of<T>(

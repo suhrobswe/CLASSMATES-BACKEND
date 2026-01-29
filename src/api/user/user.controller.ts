@@ -43,8 +43,6 @@ import { FileInterceptor } from '@nestjs/platform-express';
 export class UserController {
   constructor(private readonly userService: UserService) {}
 
-
-
   @Post('login')
   @ApiOperation({ summary: 'Login user' })
   signIn(

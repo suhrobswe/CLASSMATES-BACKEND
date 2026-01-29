@@ -1,9 +1,13 @@
 import { HttpException, NotFoundException } from '@nestjs/common';
 import { Repository } from 'typeorm';
 
-import { IFindOptions, IResponsePagination, ISuccess } from '../pagination/successResponse';
+import {
+  IFindOptions,
+  IResponsePagination,
+  ISuccess,
+} from '../pagination/successResponse';
 import { RepositoryPager } from '../pagination/RepositoryPager';
-import { successRes } from '../successRe';
+import { successRes } from '../successRes';
 
 export class BaseService<CreateDto, UpdateDto, Entity> {
   constructor(private readonly repository: Repository<any>) {}

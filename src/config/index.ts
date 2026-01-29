@@ -18,5 +18,5 @@ export const config = {
   BASE_URL: String(process.env.BASE_URL),
   DB_URI: String(process.env.DB_URI),
 
-  NODE_ENV: String(process.env.NODE_ENV)
+  NODE_ENV: String(process.env.NODE_ENV),
 };

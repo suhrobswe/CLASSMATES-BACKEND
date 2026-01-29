@@ -10,6 +10,6 @@ import { TokenService } from 'src/common/token';
   imports: [TypeOrmModule.forFeature([UserEntity])],
   controllers: [UserController],
   providers: [UserService, CryptoService, TokenService],
-  exports:[UserService]
+  exports: [UserService],
 })
 export class UserModule {}

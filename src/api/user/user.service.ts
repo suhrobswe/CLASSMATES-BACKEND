@@ -15,7 +15,7 @@ import type { UserRepository } from 'src/core/index.respository';
 import { Roles } from 'src/common/enum/roles.enum';
 import { config } from 'src/config';
 import { CryptoService } from 'src/common/crypto';
-import { successRes } from 'src/infrastructure/successRe';
+import { successRes } from 'src/infrastructure/successRes';
 import { SignInDto } from './dto/sign-in.dto';
 import { IToken, TokenService } from 'src/common/token';
 import { Response } from 'express';
@@ -57,12 +57,10 @@ export class UserService
         await this.userRepo.save(admin);
       }
       console.log('Admin already exists');
-    } catch (error) {
-    }
+    } catch (error) {}
   }
 
-
- async updatePassword(id: number, newPass: string) {
+  async updatePassword(id: number, newPass: string) {
     const user = await this.userRepo.findOne({ where: { id } });
     if (!user) {
       throw new NotFoundException('Foydalanuvchi topilmadi');
@@ -169,7 +167,7 @@ export class UserService
 
     const accessToken = await this.token.accessToken(payload);
     const refreshToken = await this.token.refreshToken(payload);
-    await this.token.writeCookie(res, 'refresh_token', refreshToken, 15); 
+    await this.token.writeCookie(res, 'refresh_token', refreshToken, 15);
     return successRes({
       accessToken,
       role,

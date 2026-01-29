@@ -49,12 +49,12 @@ export class VideoService {
 
   async getAllVideos() {
     try {
-      const files = readdirSync(this.videosPath); 
+      const files = readdirSync(this.videosPath);
       return files
         .filter((file) => file.endsWith('.mp4') || file.endsWith('.mov'))
         .map((file) => ({
           filename: file,
-          url: `${SERVER_URL}/uploads/videos/${file}`, 
+          url: `${SERVER_URL}/uploads/videos/${file}`,
         }));
     } catch (err) {
       return [];

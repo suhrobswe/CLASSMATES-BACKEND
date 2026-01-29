@@ -6,7 +6,7 @@ import {
 import { existsSync, mkdirSync } from 'fs';
 import { writeFile, unlink } from 'fs/promises';
 import { join, extname } from 'path';
-import { v4 as uuidv4 } from 'uuid'; 
+import { v4 as uuidv4 } from 'uuid';
 
 @Injectable()
 export class FileService {

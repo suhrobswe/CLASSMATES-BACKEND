@@ -37,7 +37,7 @@ import { AuthModule } from './api/auth.module';
     UserModule,
     PostModule,
     VideoModule,
-    AuthModule
+    AuthModule,
   ],
 })
 export class AppModule {}
